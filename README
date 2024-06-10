@@ -1,0 +1,16 @@
+# Getting Started
+
+I liked the structure created and standards getting followed. I tried my 100% to follow the industry standards. If any remaining we can improve with team work.
+
+### First to clarify, there could be two options to implement URI Endpoint
+* As per REST convention [from/{senderId}/to/{receiverId}/amount/{amount}]()
+* OR we can create a transfer API with POST JSON payload/request body
+
+### Things I think we can implement to be production ready.
+###### Priorities and sequencing can be different as per deployment schedule 
+* We can change package names like controller, service, model, entity e.g. So we can identify easily, will be more readable.
+* Can discuss and implement with team to decide API structure explained above
+* Standardize application Level error/response codes and respective message strings.
+* Can improve ControllerAdvice to handle exceptions in the application. Which will help to response to the client with proper code and messages. Which will help to troubleshooting.
+* Adding a filter or interceptor to mark each request with unique identifier (request id) and incorporate in logs. It will help in concurrent requests logs troubleshooting, microservice log sequencing, dashboard creations. 
+* Important log statements are to be added.
