@@ -2,7 +2,6 @@ package com.dws.challenge.web;
 
 import com.dws.challenge.domain.Transaction;
 import com.dws.challenge.service.FundTransferService;
-import com.dws.challenge.service.IntraBankFundTransferService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -29,25 +29,33 @@ public class IntraBankFundTransferService implements FundTransferService {
         if (amountToBeTransferred.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ChallengeAppException("C4005", "The transfer amount must be positive number.");
         }
-        Account sourceAccount = accountsService.getAccount(senderAccountId);
-        if (null == sourceAccount)
+        Account senderAccount = accountsService.getAccount(senderAccountId);
+        if (null == senderAccount)
             throw new ChallengeAppException("C4004", "Invalid Account. Sender account id " + senderAccountId + " not valid.");
-        Account destinationAccount = accountsService.getAccount(receiverAccountId);
-        if (null == destinationAccount)
+        Account receiverAccount = accountsService.getAccount(receiverAccountId);
+        if (null == receiverAccount)
             throw new ChallengeAppException("C4003", "Invalid Account. Receiver account id " + receiverAccountId + " not valid.");
         Transaction transaction = new Transaction();
-        synchronized (sourceAccount) {
-            synchronized (destinationAccount) {
-                if (!sourceAccount.withdraw(amountToBeTransferred))
+        /**
+         *
+         * Thread safe transfer lies here
+         * Sender account and receiver account has to be synchronized
+         * So other thread wait till transfer is done
+         *
+         * Transaction creation can be moved out, can be async
+         * */
+        synchronized (senderAccount) {
+            synchronized (receiverAccount) {
+                if (!senderAccount.withdraw(amountToBeTransferred))
                     throw new InsufficientFundsException("C4002", senderAccountId + " Insufficient Balance.");
-                destinationAccount.deposit(amountToBeTransferred);
+                receiverAccount.deposit(amountToBeTransferred);
                 transaction.setTransactionId(UUID.randomUUID().toString());
                 transaction.setTransactionAmount(amountToBeTransferred);
                 transaction.setSenderAccountId(senderAccountId);
                 transaction.setReceiverAccountId(receiverAccountId);
             }
         }
-        notificationService.notifyAboutTransfer(sourceAccount, "Fund transfer: " + amountToBeTransferred + " from account: " + senderAccountId + " to account: " + receiverAccountId + " is success with TXN ID: " + transaction.getTransactionId() + ". New Balance : " + sourceAccount.getBalance().toString());
+        notificationService.notifyAboutTransfer(senderAccount, "Fund transfer: " + amountToBeTransferred + " from account: " + senderAccountId + " to account: " + receiverAccountId + " is success with TXN ID: " + transaction.getTransactionId() + ". New Balance : " + senderAccount.getBalance().toString());
         return transaction;
     }
 }
