@@ -29,6 +29,7 @@ public class IntraBankFundTransferService implements FundTransferService {
         if (amountToBeTransferred.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ChallengeAppException("C4005", "The transfer amount must be positive number.");
         }
+
         Account senderAccount = accountsService.getAccount(senderAccountId);
         if (null == senderAccount)
             throw new ChallengeAppException("C4004", "Invalid Account. Sender account id " + senderAccountId + " not valid.");
@@ -36,6 +37,16 @@ public class IntraBankFundTransferService implements FundTransferService {
         if (null == receiverAccount)
             throw new ChallengeAppException("C4003", "Invalid Account. Receiver account id " + receiverAccountId + " not valid.");
         Transaction transaction = new Transaction();
+
+        Account firstAccount;
+        Account secondAccount;
+        if (senderAccountId.compareTo(receiverAccountId) < 0) {
+            firstAccount = senderAccount;
+            secondAccount = receiverAccount;
+        } else {
+            firstAccount = receiverAccount;
+            secondAccount = senderAccount;
+        }
         /**
          *
          * Thread safe transfer lies here
@@ -43,9 +54,20 @@ public class IntraBankFundTransferService implements FundTransferService {
          * So other thread wait till transfer is done
          *
          * Transaction creation can be moved out, can be async
+         *
+         * Problem:
+         * Thread 1: acquires lock for senderAccount and attempt to lock receiverAccount
+         * Thread 2: acquired lock for receiverAccount and attempt to lock senderAccount
+         *
+         * If both threads reach here simultaneously, deadlock can occur
+         *
+         * Solution:
+         * Irrespective of sender and receiver whichever is lower in comparison that accountId will get locked first so there will not be deadlock
+         *
+         * Corrected
          * */
-        synchronized (senderAccount) {
-            synchronized (receiverAccount) {
+        synchronized (firstAccount) {
+            synchronized (secondAccount) {
                 if (!senderAccount.withdraw(amountToBeTransferred))
                     throw new InsufficientFundsException("C4002", senderAccountId + " Insufficient Balance.");
                 receiverAccount.deposit(amountToBeTransferred);
